@@ -1,0 +1,516 @@
+<!doctype html>
+<html ng-app="communication">
+<head>
+    <meta charset="utf-8">
+
+    <link rel="stylesheet" href="../css/index.css">
+    <script src="../js/jquery-1.12.1.min.js"></script>
+    <script src="../js/angular.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.0-beta.2/angular-sanitize.js"></script>
+    <link rel="stylesheet" href="../Bootstrap3/css/bootstrap.css">
+    <script src="../Bootstrap3/js/bootstrap.js"></script>
+    <link rel="stylesheet" href="../font-awesome-4.6.3/css/font-awesome.min.css">
+
+    <link rel="stylesheet" href="../css/communication.css">
+    <script src="../js/communication.js"></script>
+    <script type="text/javascript" src="../js/nicEdit-latest.js"></script>
+    <script type="text/javascript">bkLib.onDomLoaded(function() { nicEditors.allTextAreas() });</script>
+
+    <script>
+        var app = angular.module("communication", ['ngSanitize']);
+        app.controller("main", function($http, $scope) {
+            $scope.otdel = [{name:'Accounting Department'}, {name:'Front Office'}, {name:'IT Department'}, {name:'Marketing Machine'}, {name:'Материальный стол'}, {name:'Удаленные бухгалтера'}];
+            console.log($scope.otdel);
+            $scope.sotrudniki = [{name: ' SMM Специалист'}, {name: ' Архитектор'}, {name: ' Бухгалтер Postnet24'}, {name: ' Бухгалтер зарплатного стола'}, {name: ' Бухгалтер материального стола'}, {name: ' Бухгалтер расчетного стола'}, {name: ' Бухгалтер-стажер'}, {name: ' Бухгалтер ТОО Экипаж'}, {name: ' Директор'}, {name: ' Маркетолог-стажер'}, {name: ' Налоговый аудитор'}, {name: ' Ответственный бухгалтер'}, {name: ' Помощник HR менеджера'}, {name: ' Помощник бухгалтера материального стола'}, {name: ' Помощник бухгалтера расчетного стола'}, {name: ' Помощник главного бухгалтера'}, {name: ' Специалист по контекстной рекламе'}, {name: ' Старший программист'}];
+
+            $scope.posts = "";
+            $scope.postError = "";
+            $scope.postTema = "";
+            $scope.postText = "";
+            $scope.postId = "";
+            $scope.whoSee = "sda";
+
+            $http.get("http://localhost:3000/getUser")
+              .success(function(result) {
+                console.log(result);
+              })
+              .error(function(result) {
+                console.log(result);
+              });
+            // get information about User 
+            // getUserName
+                $scope.userName = "";
+                $scope.userId = "";
+                $scope.userAvatar = "";
+                // user info for comment
+                    $scope.userInfoForComment = [];
+                $scope.getUser = function(userId, type) {
+                    $http.post("http://localhost:3000/api/user/get", {userId :userId})
+                        .success(function(result) {
+                            if(parseInt(type) == 1){
+                                console.log(result);
+                                $scope.userName = result.name;
+                                $scope.userId = result._id;
+                                $scope.userAvatar = result.avatar;
+                            }
+                            else {
+                                $scope.userInfoForComment = result;
+                            }
+                        })
+                        .error(function(result) {
+                            console.log("error getUserName");
+                        });
+                }
+
+                $scope.getUser("582022bd000bb408b0498b09", 1);
+                // console.log($scope.getUser("582022bd000bb408b0498b0a", 2)userInfoForComment);
+                // $http.post("http://localhost:3000/api/user/get", {userId: "582022bd000bb408b0498b0a"})
+                //     .success(function(result) {
+                //         console.log(result);
+                        
+                //     })
+                //     .error(function(result) {
+                //         console.log(result);
+                //     });
+            // set text and tema of post
+                $scope.getPostTema = "";
+                $scope.getPostText = "";
+            // get comment
+                $scope.comments = [];
+            // add Comment
+                $scope.commentText = "";
+                $scope.commentError = "";
+                $scope.commentEnter = "введите ваше комментарий";
+                $scope.addComment = function() {
+                    var commentText = $(".addComment #sample div .nicEdit-main").html();
+                    if(!commentText || commentText == "введите ваше комментарий" || commentText == "<br>"){
+                        $scope.commentError = "Заполните поле корректно";
+                    } 
+                    else if (!$scope.postId){
+                        $scope.commentError = "Error post not found";
+                    } else {
+                        $scope.commentError = "";
+                        $http.post("http://localhost:3000/api/comment/add", {userName: $scope.userName, userId: $scope.userId, postId: $scope.postId, text: commentText})
+                            .success(function(result) {
+                                console.log(result);
+                                // $scope.commentEnter = "введите ваше комментарий";
+                                $(".addComment #sample div .nicEdit-main").text("введите ваше комментарий");
+                                $scope.comments = result;
+                            })
+                            .error(function(result) {
+                                console.log("error");
+                            });
+                        console.log(commentText, $scope.postId, $scope.userId);
+                    }
+                    
+                }
+            // getPosts name, creater, date
+                $http.get("http://localhost:3000/api/posts/get")
+                    .success(function(result) {
+                        $scope.posts = result;
+                    })
+                    .error(function(result) {
+                        console.log("error");
+                    });
+            // getPost and comment
+                $scope.getPost = function(postId) {
+                    $http.post("http://localhost:3000/api/post/get", {id: postId})
+                        .success(function(result) {
+                            console.log(result);
+                            $scope.getPostTema = result.tema;
+                            $scope.getPostText = result.text;
+                            $scope.postId = result._id;
+                            $("#postText").html(result.text);
+                
+                        })
+                        .error(function(result) {
+                            console.log("error");
+                        });
+                    // getComment
+                        $http.post("http://localhost:3000/api/comment/get", {postId: postId})
+                            .success(function(result) {
+                                console.log(result);
+                                $scope.comments = result;
+
+                            })
+                            .error(function(result) {console.log("error");});
+                }
+
+            // addPosts
+                $scope.addPost = function() {
+                    $scope.postText = $(".nicEdit-main").html();
+                    console.log($scope.postTema, $scope.postText);
+                    if(!$scope.postText || $scope.postText == "<br>" || !$scope.postTema || !$scope.whoSee) {
+                        $scope.postError = "Заполните поле корректно";
+                    } else {
+                        $scope.postError = "";
+                        // , userId: 
+                        $http.post("http://localhost:3000/api/post/add", {tema: $scope.postTema, text: $scope.postText})
+                            .success(function(result) {
+                                $(".nicEdit-main").html("");
+                                $scope.postTema = "";
+                                $scope.postText = "";
+                                $scope.posts = result;
+                            })
+                            .error(function(result) {
+                                console.log("Error");
+                            });
+                    }
+                }
+            $scope.selectTema = function(postId){
+                $scope.getPost(postId);
+            }
+        });
+
+        app.directive("tr", function() {
+            return {
+                restrict: 'A',
+                link: function(scope, element, attrs) {
+                    element.click(function(){
+                        $(".lists tr").css("backgroundColor", "#fff");
+                        $(this).css("backgroundColor", "#f5e6a3");
+                    });
+                    element.mouseenter(function() {
+                        if(("rgb(245, 230, 163)" != $(this).css("backgroundColor")) && ("rgb(248, 238, 192)" != $(this).css("backgroundColor"))) $(this).css("backgroundColor", "#f5f5f5");
+                        else $(this).css("backgroundColor", "#f5e6a3");
+                    });
+                    element.mouseleave(function() {
+                        if(("rgb(245, 230, 163)" != $(this).css("backgroundColor")) && ("rgb(248, 238, 192)" != $(this).css("backgroundColor"))) $(this).css("backgroundColor", "#fff");
+                        else $(this).css("backgroundColor", "#f8eec0");
+                    });
+                }
+            }
+        });
+        app.directive("selectTema", function() {
+            return {
+                link: function(scope, element, attrs) {
+                    element.click(function(){
+                        scope.getPost($(this).get(0).id);
+                    });
+                }
+            }
+        });
+       $(document).ready(function() {
+         $(".autocomplete-div").click(function() {
+          $(".autocomplete-text").css("display", "none");
+          $(".autocomplete-input").css("display", "inline-block");
+          $(".autocomplete-input").focus();
+
+        });
+
+        $(".selected-item-close").click(function() {
+          console.log();
+          $(this).parent().parent().parent().parent().parent().fadeOut(100);
+        });
+      });
+    </script>
+    <!-- endinject -->
+    <!-- endbuild -->
+</head>
+<body ng-controller="main">
+    <div class="background ng-scope">
+        <div class="layout-fill ng-scope layout-row">
+
+            <!-- uiView:  -->
+            <div class="background ng-scope">
+                <div class="m-container documents ng-scope">
+                    <!--m-menu-documents-->
+                    <!-- uiView:  -->
+                    <div ui-view="" class="view ng-scope">
+                        <div class="m-menu-documents ng-scope">
+                            <!-- (data-offset-top="100", bs-affix)-->
+                            <!-- ngRepeat: item in vm.docTypes -->
+                            <div  class="m-menu-documents-item ng-scope" aria-label="{{item.value}}" role="button" tabindex="0" style="">
+                                <img ng-src="../assets/images/menu_icons/realisation/realisation1.svg" class="disabled" src="../assets/images/menu_icons/realisation/realisation1.svg">
+                                <img ng-src="../assets/images/menu_icons/realisation/realisation1-reverse.svg" class="active" src="../assets/images/menu_icons/realisation/realisation1-reverse.svg"></div>
+                            <!-- end ngRepeat: item in vm.docTypes -->
+                            <div  class="m-menu-documents-item ng-scope m-menu-document-item-active" aria-label="{{item.value}}" role="button" tabindex="0" style="">
+                                <img ng-src="../assets/images/menu_icons/realisation/realisation2.svg" class="disabled" src="../assets/images/menu_icons/realisation/realisation2.svg">
+                                <img ng-src="../assets/images/menu_icons/realisation/realisation2-reverse.svg" class="active" src="../assets/images/menu_icons/realisation/realisation2-reverse.svg"></div>
+                            <!-- end ngRepeat: item in vm.docTypes -->
+                            <div  class="m-menu-documents-item ng-scope" aria-label="{{item.value}}" role="button" tabindex="0">
+                                <img ng-src="../assets/images/menu_icons/realisation/realisation3.svg" class="disabled" src="../assets/images/menu_icons/realisation/realisation3.svg">
+                                <img ng-src="../assets/images/menu_icons/realisation/realisation3-reverse.svg" class="active" src="../assets/images/menu_icons/realisation/realisation3-reverse.svg"></div>
+                            <!-- end ngRepeat: item in vm.docTypes -->
+                            <div  class="m-menu-documents-item ng-scope" aria-label="{{item.value}}" role="button" tabindex="0">
+                                <img ng-src="../assets/images/menu_icons/realisation/realisation4.svg" class="disabled" src="../assets/images/menu_icons/realisation/realisation4.svg">
+                                <img ng-src="../assets/images/menu_icons/realisation/realisation4-reverse.svg" class="active" src="../assets/images/menu_icons/realisation/realisation4-reverse.svg"></div>
+                            <!-- end ngRepeat: item in vm.docTypes --> </div>
+                        <div data-offset-top="100" bs-affix="" class="m-menu-documents m-menu-documents-right ng-scope affix-top" style="position: relative;">
+                            <div ng-click="vm.sendRequestSelling()" ng-class="{animation: vm.getClassValidationForSubmit()}" class="m-menu-documents-item" aria-label="Отправить" role="button" tabindex="0">
+                                <img ng-src="../assets/images/menu_icons/realisation7.svg" class="disabled" src="../assets/images/menu_icons/realisation7.svg">
+                                <img ng-src="../assets/images/menu_icons/realisation7-reverse.svg" class="active" src="../assets/images/menu_icons/realisation7-reverse.svg"></div>
+                            <div ui-sref="history" class="m-menu-documents-item" aria-label="История" href="#/documents/history">
+                                <img ng-src="../assets/images/menu_icons/realisation5.svg" class="disabled" src="../assets/images/menu_icons/realisation5.svg">
+                                <img ng-src="../assets/images/menu_icons/realisation5-reverse.svg" class="active" src="../assets/images/menu_icons/realisation5-reverse.svg"></div>
+                            <div ui-sref="settings" class="m-menu-documents-item" aria-label="Настройки" href="#/documents/settings">
+                                <img ng-src="../assets/images/menu_icons/settings.svg" class="disabled" src="../assets/images/menu_icons/settings.svg">
+                                <img ng-src="../assets/images/menu_icons/settings-reverse.svg" class="active" src="../assets/images/menu_icons/settings-reverse.svg"></div>
+                            <div ng-click="vm.logout()" class="m-menu-documents-item" aria-label="Выйти" role="button" tabindex="0">
+                                <img ng-src="../assets/images/menu_icons/realisation6.svg" class="disabled" src="../assets/images/menu_icons/realisation6.svg">
+                                <img ng-src="../assets/images/menu_icons/realisation6-reverse.svg" class="active" src="../assets/images/menu_icons/realisation6-reverse.svg"></div>
+                        </div>
+                        <!-- ngIf: vm.document.docType -->
+                        <div>
+
+                            <div class="like-invoice-body m-table">
+                                <!-- Все посты -->
+                                <div class="ng-scope">
+                                    <div class="modal-header modal-header-lists">
+                                        <h3 id="gridSystemModalLabel" class="modal-title">Все посты</h3>
+                                        <div class="btn-group">
+                                            <p class="btn-select">Мои</p>
+                                            <p class="btn-select">Общие</p>
+                                            <p class="btn-select">Все</p>
+                                        </div>
+                                    </div>
+                                    <style>
+                                        .btn-group, #gridSystemModalLabel{display: inline-block;}
+                                        .modal-header-lists{border-bottom:none;}
+                                        .modal-body-lists{padding: 0 0px;}
+                                    </style>
+                                    <div class="modal-body modal-body-lists">
+                                        <form class="form-horizantal ng-pristine ng-valid">
+                                            <table class="table lists">
+                                                <tr>
+                                                    <th>Тема</th>
+                                                    <th>Создана</th>
+                                                    <th>Ответы</th>
+                                                    <th>Владелец / Автор</th>
+                                                    <th></th>
+                                                </tr>
+                                                <tr ng-repeat="post in posts" tr>
+                                                    <td>
+                                                        <span class="tema" id="{{post._id}}" ng-click="selectTema(post._id)">{{post.tema}}</span>
+                                                    </td>
+                                                    <td>{{post.date}}</td>
+                                                    <td>{{post.answer}}</td>
+                                                    <td>{{post.creater}}</td>
+                                                    <td> <i aria-hidden="true" class="fa fa-star-o star"></i>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </form>
+                                    </div>
+                                </div> 
+                        </div> <!-- end Все посты -->
+                        <div class="like-invoice-body m-table">
+                            <!-- Новое сообщение -->
+                            <div >
+                                <div class="modal-header">
+                                    <h3 id="gridSystemModalLabel" class="modal-title">Новое сообщение</h3>
+                                    <span class="text-danger text-error">{{postError}}</span>
+                                </div>
+                                <div class="modal-body">
+                                    <form class="form-horizantal ng-pristine ng-valid">
+                                        <div class="form-group">
+                                            <label for="inputEmail3" class="col-sm-2 control-label">Получатели</label>
+                                            <div class="col-sm-10">
+                                                <style>
+                                                      .dropdown{width: 100%;}
+                                                      .autocomplete{margin: 0 0;}
+                                                      .employee, .all, .contractor{text-align: left;}
+                                                      .all{background: #d3d3bc;}
+                                                    </style>
+                                                <div class="dropdown">
+                                                    <div class="autocomplete autocomplete-div" id="dLabel" data-toggle="dropdown" >
+                                                        <span class="autocomplete-text">Имя, должность, почта или стрелка вниз для ручного поиска</span>
+                                                        <!-- Выбранные юзеры -->
+                                                        <div class="selected-item">
+                                                            <table class="selected-item-table">
+                                                                <re>
+                                                                    <td>
+                                                                        <div class="selected-item-avatar">
+                                                                            <img class="img-rounded" src="http://litanons.ru/vk/img.php?url=http://cs630921.vk.me/v630921507/339ca/LCqxUyIWzcE.jpg" width="100%" height="100%" alt=""></div>
+                                                                    </td>
+                                                                    <td>
+                                                                        <span class="selected-item-name">Андрей Павлов 1</span>
+                                                                        <span class="selected-item-profesion">программист</span>
+                                                                    </td>
+                                                                    <td>
+                                                                        <span class="selected-item-close">
+                                                                            <i class="fa fa-times" aria-hidden="true"></i>
+                                                                        </span>
+                                                                    </td>
+                                                                </re>
+                                                            </table>
+                                                        </div>  <!-- end Выбранные юзеры -->
+                                                        <input type="text" class="autocomplete-input" placeholder="Имя, должность, почта или стрелка вниз для ручного поиска"></div>
+                                                    <span class="caret autocomplete-caret" id="dLabel" type="button" data-toggle="dropdown" ></span>
+                                                    <!-- dropdown-menu все юзеры -->
+                                                    <ul class="dropdown-menu" aria-labelledby="dLabel">
+                                                         <!-- Получатели все юзеры -->
+                                                        <div class="autocomplete-allUsers">
+                                                            <div class="comment" >
+                                                                <table  class='comment-table autocomplete-table table-hover'>
+                                                                    <tr>
+                                                                        <td>
+                                                                            <div class="autocomplete-photo">
+                                                                                <img class="img-thumbnail" src="https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcS7XmgLfLPpB2aO_I4-7ir7KkZfz4hUMXSuAgPdJ44eFGWm31E-" width="100%" height="100%" alt="">
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="comment-info">
+                                                                                <p class="comment-name autocomplete-name">Андрей Павлов</p>
+                                                                                <p class="comment-date autocomplete-who">программист</p>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                </table>
+                                                            </div>
+                                                        </div> <!-- end Получатели все юзеры -->
+                                                        <!-- Юзеры по котегориям -->
+                                                        <div class="autocomplete-all" >
+                                                            <ul class="ui-sdf-autocomplete-dropdown-filters">
+                                                                <li class="all-li">
+                                                                    <div class="all filter-parent ui-sdf-autocomplete-filter">
+                                                                        <div class="filter-shadow"></div>
+                                                                        <span>Все</span>
+                                                                    </div>
+                                                                </li>
+                                                                <li class="ui-sdf-autocomplete-filter-item selected-filter">
+                                                                    <div class="employee filter-parent ui-sdf-autocomplete-filter">
+                                                                        <div class="filter-shadow"></div>
+                                                                        <span>
+                                                                            <i class="fa fa-university" aria-hidden="true"></i>
+                                                                            Сотрудники
+                                                                        </span>
+                                                                    </div>
+                                                                </li>
+                                                                <li class="ui-sdf-autocomplete-filter-item">
+                                                                    <div class="contractor filter-parent ui-sdf-autocomplete-filter">
+                                                                        <div class="filter-shadow"></div>
+                                                                        <span>
+                                                                            <i class="fa fa-suitcase" aria-hidden="true"></i>
+                                                                            Все Клиенты
+                                                                        </span>
+                                                                    </div>
+                                                                </li>
+                                                                <li class="ui-sdf-autocomplete-filter-group">
+                                                                    <span class="filter-child employee ui-sdf-autocomplete-filter-group2">Отделы</span>
+                                                                </li>
+                                                                <li class="ui-sdf-autocomplete-filter-item" ng-repeat="name in otdel">
+                                                                    <div class="filter-child employee ui-sdf-autocomplete-filter">
+                                                                        <div class="filter-shadow"></div>
+                                                                        <span>{{name.name}}</span>
+                                                                    </div>
+                                                                </li>
+                                                                <li class="ui-sdf-autocomplete-filter-group">
+                                                                    <span class="filter-child employee ui-sdf-autocomplete-filter-group2">Сотрудники по должности</span>
+                                                                </li>
+                                                                <li class="ui-sdf-autocomplete-filter-item" ng-repeat="name in sotrudniki">
+                                                                    <div class="filter-child employee ui-sdf-autocomplete-filter">
+                                                                        <div class="filter-shadow"></div>
+                                                                        <span>{{name.name}}</span>
+                                                                    </div>
+                                                                </li>
+                                                                <li class="ui-sdf-autocomplete-filter-group">
+                                                                    <span class=" ui-sdf-autocomplete-filter-group2">Пользовательские группы</span>
+                                                                </li>
+                                                            </ul>
+                                                        </div> <!-- end Юзеры по котегориям -->
+                                                    </ul> <!-- end dropdown-menu все юзеры -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <br>
+                                        <br>
+                                        <br>
+                                        <div class="form-group">
+                                            <label for="inputEmail3" class="col-sm-2 control-label">Тема</label>
+                                            <div class="col-sm-10">
+                                                <input type="text" class="form-control" placeholder="Тема" ng-model="postTema"></div>
+                                        </div>
+                                        <br>
+                                        <br>
+                                        <div class="form-group">
+                                            <label for="inputEmail3" class="col-sm-2 control-label">Содержание</label>
+                                            <div class="col-sm-10">
+                                                <div class="write-comment">
+                                                    <div id="sample">
+                                                        <textarea name="area2" style="width: 100%;"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <br>
+                                        <br>
+                                        <br>
+                                        <button id="saveMessage" ng-click="addPost()" type="button" class="btn btn-success">Сохранить</button>
+                                    </form>
+                                    <br>
+                                    <p class="text-muted">Данное сообщение увидите только вы и адрес</p>
+                                </div>
+                            </div>
+                            <!-- end Новое сообщение' --> </div>
+
+                        <div class="like-invoice-body m-table">
+                            <!-- Пост -->
+                            <div class="ng-scope">
+                                <div class="modal-header">
+                                    <h3 id="postTema" class="modal-title">{{getPostTema}}</h3>
+                                    <br>
+                                    <br>
+                                    <div class="bg-success post" id="postText"></div>
+                                </div>
+                                <br>
+                                <br>
+                                <div class="modal-body modal-body-lists">
+                                    <div class="comment">
+                                        <table class='comment-table'>
+                                            <tr>
+                                                <td>
+                                                    <div class="comment-photo">
+                                                        <img class="img-thumbnail" src="{{userAvatar}}" width="100%" height="100%" alt=""></div>
+                                                </td>
+                                                <td>
+                                                    <!-- -- Комментарий write -- -->
+                                                    <div class="comment-info">
+                                                        <p class="comment-name">{{userName}}</p>
+                                                        <div class="write-comment addComment">
+                                                            <p>Комментарий</p>
+                                                            <div id="sample">
+                                                                <textarea name="area2" style="width: 100%;">{{commentEnter}}</textarea>
+                                                            </div>
+                                                            <br>
+                                                            <button type="button" class="btn btn-success" id="sendComment" ng-click="addComment()">Отправить</button>
+                                                            <span class="text-danger text-error">{{commentError}}</span>
+                                                        </div>
+                                                    </div> <!-- end -- Комментарий write -- -->
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <!-- Комментарий show-->
+                                    <div class="comments">
+                                        <hr>
+                                        <div class="comment" ng-repeat="comment in comments">
+                                            <table  class='comment-table'>
+                                                <tr>
+                                                    <td>
+                                                        <div class="comment-photo">
+                                                            <img class="img-thumbnail" src="https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcS7XmgLfLPpB2aO_I4-7ir7KkZfz4hUMXSuAgPdJ44eFGWm31E-" width="100%" height="100%" alt=""></div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="comment-info">
+                                                            <p class="comment-name">{{comment.userName}}</p>
+                                                            <p class="comment-date">{{comment.date}}</p>
+                                                            <p class="comment-text" ng-bind-html="comment.text"></p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                            <hr>
+                                        </div>
+                                    </div> <!-- end Комментарий show-->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
